@@ -1,0 +1,578 @@
+<?php
+
+function runkeeper_schema() {
+  $schema['runkeeper_code'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        ),
+      'code' => array(
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'access_token' => array(
+        'type' => 'varchar',
+        'length' => 150,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'unique keys' => array(
+      'uid' => array('uid'),
+    ),
+  );
+  $schema += runkeeper_schema_activity_7004();
+  return $schema;
+}
+
+function runkeeper_update_7003() {
+  if (!db_field_exists('runkeeper_code', 'access_token')) {
+    $field = array('type' => 'varchar', 'length' => 150, 'not null' => TRUE, 'default' => '');
+    db_add_field('runkeeper_code', 'access_token', $field);
+  }
+}
+/**
+ * Add Activities table
+ */
+function runkeeper_update_7004() {
+  $schemas = runkeeper_schema_activity_7004();
+  foreach($schemas as $key => $schema){
+    db_drop_table($key);
+    db_create_table($key, $schema);  
+  }
+  
+}
+/**
+ * get Activities table schema
+ */
+function runkeeper_schema_activity_7004() {
+ $schema= array();
+ /*
+ $schema['workout_entry']  = array(
+    'description' => 'Workout entries',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Plan ID',
+        'type' => 'serial',
+        'unsigned' => TRUE, 
+        'not null' => TRUE
+       ),
+      'pid' => array(
+        'description' => 'Plan ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'timestamp' => array(
+        'description' => 'Timestamp of entered',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'level' => array(
+        'description' => 'level',
+        'type' => 'varchar',
+        'size' => 255,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('id'),
+  );
+  */
+  $schema['user_measurements']  = array(
+    'description' => 'Runkeeper Nutrition data',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'User ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'Plan ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'description' => 'Measurement type either entered from site (goal, initial, final) or from api',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'source' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'waist' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'chest' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bicep' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'thigh' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'calf' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'forearm' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'blood_pressure' => array(
+       'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'blood_fat_percentage' => array(
+       'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bmi' => array(
+       'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('id'),
+  );
+  
+ $schema['user_background_activity']  = array(
+    'description' => 'Strength activity table to store Runkeeper Strength activity data',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'User ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'Plan ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'bid' => array(
+        'description' => 'Background Activity ID',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'source' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'steps' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'total_calories' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('id'),
+  );
+ $schema['user_fitness_activity']  = array(
+    'description' => 'Fitness activity table to store Runkeeper fitness activity data',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'user ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'Plan ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fid' => array(
+        'description' => 'Fitness Activity ID',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'source' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'total_distance' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'duration' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'entry_mode' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'average_heart_rate' => array(
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'distance' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'serialize' => true,
+      ),
+      'heart_rate' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'serialize' => true,
+      ),
+      'total_calories' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'calories' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'serialize' => true,
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  $schema['user_strength_activity']  = array(
+    'description' => 'Strength activity table to store Runkeeper Strength activity data',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'sid' => array(
+        'description' => 'Strength ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => 'User ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'Plan ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'source' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'total_calories' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  $schema['user_exercise']  = array(
+    'description' => 'Strength activity table to store Runkeeper Strength activity data',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'sid' => array(
+        'description' => 'Strength ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'primary_type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'secondary_type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'primary_muscle_group' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'secondary_muscle_group' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'routine' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'notes' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'sets' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'sid' => array('sid'),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  
+  
+  $schema['user_nutrition']  = array(
+    'description' => 'Runkeeper Nutrition data',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique ID.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'User ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => 'Plan ID',
+        'type' => 'int',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'nid' => array(
+        'description' => 'Nutrition ID',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'source' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'total_calories' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'carbohydrates' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fat' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fiber' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'protein' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'sodium' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'water' => array(
+        'type' => 'float',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'meal' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}

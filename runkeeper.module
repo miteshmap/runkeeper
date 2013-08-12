@@ -1,0 +1,1304 @@
+<?php
+
+/**
+ * @file contains Runkeeper Api information
+ * define('RUNKEEPER_BASE_URL', 'https://api.runkeeper.com'); 
+ * define('CLIENT_ID', 'b0bac7bd422046aa8cdd1c28bf9201e9');
+ * define('SECRET_KEY', '5c911bcc7708460ca4fdac4e58d38eb4');
+ * define('AUTHORIZE_URL', 'https://runkeeper.com/apps/authorize');
+ * define('TOKEN_URL', 'https://runkeeper.com/apps/token');
+ * define('DEAUTHORIZE_URL', 'https://runkeeper.com/apps/de-authorize');
+*/
+
+$runkeeper_path = drupal_get_path('module','runkeeper');
+require_once DRUPAL_ROOT.'/'.$runkeeper_path.'/lib/runkeeper_config.php';
+require_once DRUPAL_ROOT.'/'.$runkeeper_path.'/lib/runkeeperAPI.class.php';
+
+/**
+ * Implements hook_init().
+function runkeeper_init(){
+}
+*/
+
+
+/**
+ * Implements hook_init().
+ */
+function runkeeper_permission() {
+	return array(
+		'access member page' => array(
+			'title' => t('Access Member Page'),
+			'description' => t('Allow user to see member page'),
+		),
+		'administer member page' => array(
+			'title' => t('Administer Member Page'),
+			'description' => t('Allow users to see member page'),
+		),
+		'access admin dashboard page' => array(
+			'title' => t('Access Admin Dashboard Page'),
+			'description' => t('Allow admin user to see links and navigate to user pages'),
+		),
+	); 
+}
+
+/**
+ * Implements hook_menu()
+ */
+function runkeeper_menu() {
+  $items = array();
+  
+  $items['user/%user/fitness-activities'] = array(
+    'title' => 'Fitness Activities',
+    'description' => 'Shows fitness activites from runkeeper',
+    'page callback' => 'runkeeper_show_fitness_activities',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/fitness-activities/%/%'] = array(
+    'title' => 'Fitness Activities',
+    'description' => 'Shows fitness activites from runkeeper',
+    'page callback' => 'runkeeper_get_fitness_activity_details',
+    'page arguments' => array(1, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/weight-feed'] = array(
+    'title' => 'Weight Feed',
+    'description' => 'Shows weight feed from runkeeper',
+    'page callback' => 'runkeeper_show_weight_feed',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/weight-feed/%/%'] = array(
+    'title' => 'Weight Feed',
+    'description' => 'Shows weight feed from runkeeper',
+    'page callback' => 'runkeeper_show_weight_details',
+    'page arguments' => array(1, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/strength-training'] = array(
+    'title' => 'Strength Training',
+    'description' => 'Shows Strength Training Activity Feed',
+    'page callback' => 'runkeeper_show_strength_training_feed',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/strength-training/%/%'] = array(
+    'title' => 'Strength Activity Details',
+    'description' => 'Shows Strength Activity Details',
+    'page callback' => 'runkeeper_show_strength_activity_details',
+    'page arguments' => array(1, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/nutrition'] = array(
+    'title' => 'Nutrition Measurements',
+    'description' => 'Shows Nutrition Measurements',
+    'page callback' => 'runkeeper_show_nutrition_measurements',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/nutrition/%/%'] = array(
+    'title' => 'Nutrition Measurement Details',
+    'description' => 'Shows nutrition Activity Details',
+    'page callback' => 'runkeeper_show_nutrition_activity_details',
+    'page arguments' => array(1, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/background-activities'] = array(
+    'title' => 'Background Activities',
+    'description' => 'Shows Nutrition Measurements',
+    'page callback' => 'runkeeper_show_background_activities',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/background-activities/%/%'] = array(
+    'title' => 'Background Activity Details',
+    'description' => 'Shows Background Activity Details',
+    'page callback' => 'runkeeper_show_background_activity_details',
+    'page arguments' => array(1, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/general-measurements'] = array(
+    'title' => 'General Measurements',
+    'description' => 'Shows General Measurements',
+    'page callback' => 'runkeeper_show_general_measurements',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['user/%user/general-measurements/%/%'] = array(
+    'title' => 'General Measurement Details',
+    'description' => 'Shows General Measurement Details',
+    'page callback' => 'runkeeper_show_general_measurement_details',
+    'page arguments' => array(1, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access user profiles'),
+    'file' => 'runkeeper.pages.inc',
+  );
+  
+  $items['admin/config/services/runkeeper'] = array(
+    'title' => 'Runkeeper Api Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('runkeeper_admin_settings'),
+    'access arguments' => array('access content'),
+    'file' => 'runkeeper.admin.inc',
+  );
+  
+  $items['admin/config/services/runkeeper/test'] = array(
+    'title' => 'Runkeeper Api test',
+    'page arguments' => array('runkeeper_admin_test'),
+    'page callback' => 'drupal_get_form',
+    'file' => 'runkeeper.admin.inc'
+  );
+  
+  $items['runkeeper/user/autocomplete'] = array(
+    'title' => 'Home',
+    'page callback' => 'runkeeper_user_autocomplete',
+    'access callback' => true,
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['dashboard'] = array(
+    'title' => 'Upcoming Workouts',
+    'page callback' => 'runkeeper_admin_dashboard',
+    'access arguments' => array('access admin dashboard page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.admin.dashboard.inc',
+  );
+  
+  $items['user/member-home'] = array(
+    'title' => 'Dashboard',
+    'page callback' => 'runkeeper_user_member_home',
+    'access arguments' => array('administer member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.dashboard.inc',
+  );
+  
+  $items['member-home'] = array(
+    'title' => 'Home',
+    'page callback' => 'runkeeper_member_home',
+    'access arguments' => array('access member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.dashboard.inc',
+  );
+  
+  $items['food'] = array(
+    'title' => 'Food',
+    'page callback' => 'runkeeper_food_page',
+    'access arguments' => array('access member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.food.inc',
+  );
+  
+  $items['user/food'] = array(
+    'title' => 'Food',
+    'page callback' => 'runkeeper_user_food_page',
+    'access arguments' => array('administer member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.food.inc',
+  );
+  
+  $items['exercise'] = array(
+    'title' => 'Exercise',
+    'page callback' => 'runkeeper_exercise_page',
+    'access arguments' => array('access member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.exercise.inc',
+  );
+  
+  $items['user/exercise'] = array(
+    'title' => 'Exercise',
+    'page callback' => 'runkeeper_user_exercise_page',
+    'access arguments' => array('administer member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.exercise.inc',
+  );
+  
+  $items['measurements'] = array(
+    'title' => 'Measurements',
+    'page callback' => 'runkeeper_measurements_page',
+    'access arguments' => array('access member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.measurements.inc',
+  );
+  
+  $items['user/measurements'] = array(
+    'title' => 'Measurements',
+    'page callback' => 'runkeeper_user_measurements_page',
+    'access arguments' => array('administer member page'),
+    'type' => MENU_CALLBACK,
+    'file' => 'runkeeper.measurements.inc',
+  );
+  
+  $items['user/activity-data'] = array(
+    'title' => 'Activity Data',
+    'description' => 'Get User activity data',
+    'page callback' => 'runkeeper_get_user_activity_data',
+    'access arguments' => array('administer member page'),
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+  
+}
+
+/**
+ * Runkeeper autocomplete function for user
+ * @return json array matches with string
+ * Runkeeper json array that matches with string
+ */
+function runkeeper_user_autocomplete($string){
+  $matches = array();
+  $result = db_select('users','u')
+            ->fields('u',array('name'))
+            ->condition('u.name','%' . db_like($string) . '%','LIKE')
+            ->execute()
+            ->fetchAll();
+  //$result = db_query("SELECT name FROM {users} WHERE LOWER(name) LIKE LOWER('%s%%')", $string);
+  foreach($result as $user) {
+    $matches[$user->name] = check_plain($user->name);
+  }
+  drupal_json_output($matches);
+}
+
+/**
+ *  function to genearate form of user autocomplete
+ */
+function runkeeper_user_autocomplete_form($form, &$form_state){
+  
+  $form['#attributes'] = array('class' => array('inline-form'));
+  
+  $form['form'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Select User'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#attributes' => array('class' => array('black-border')),
+  );
+  
+  $form['form']['username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User'),
+    '#size' => 30,
+    '#maxlength' => 60,
+    '#autocomplete_path' => 'runkeeper/user/autocomplete',
+    '#default_value' => !empty($_SESSION['search_username']) ? $_SESSION['search_username'] : '',
+  );
+  
+  $form['form']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'submit'
+  );
+  
+  return $form;
+}
+
+function runkeeper_user_autocomplete_form_submit($form, &$form_state){
+  //print_r($form_state['values']['username']);
+  $username = $form_state['values']['username'];
+  $result = db_select('users','u')
+            ->fields('u',array('name','uid'))
+            ->condition('u.name', db_like($username),'LIKE')
+            ->execute()
+            ->fetchObject();
+  $_SESSION['search_username'] = $result->name;
+  $_SESSION['search_user'] = $result->uid;
+}
+
+/**
+ * Get the Runkeeper client object for easy access.
+ * @return Runkeeper
+ *   Runkeeper Api object
+ */
+function runkeeper_client() {
+  static $rkAPI = NULL;
+  global $runKeeperConfig;
+  //$runkeeper_path = drupal_get_path('module','runkeeper');
+  //require_once $runkeeper_path.'/lib/runkeeper_config.php';
+  if($runKeeperConfig){
+    $rkAPI = new runkeeperAPI($runKeeperConfig);
+    
+    if($rkAPI->api_created == false) {
+    	$rkAPI = NULL;
+    }
+  }
+  return $rkAPI;
+}
+
+
+/**
+ * Get the Runkeeper client object for easy access.
+ * @return Runkeeper
+ *   Runkeeper Api object
+ */
+function runkeeper_client_request($name, $type, $fields=null, $url=null, $optparams=null, $uid=null) {
+  
+  if($uid){
+    $uid = $uid;
+  }else{
+    global $user;
+    $uid = $user->uid;
+  }
+  
+  $rkAPI  = runkeeper_client();
+  $access_token = runkeeper_get_accesstoken_by_uid($uid);
+  
+  if($access_token){
+    $rkAPI->setRunkeeperToken($access_token); 
+  }else{
+    echo $url = $rkAPI->connectRunkeeperButtonUrl();
+    exit; 
+    header('Location: '. $url, true, 302);
+    exit();
+  }
+  
+  $response = $rkAPI->doRunkeeperRequest($name, $type, $fields, $url, $optparams);
+  return $response;
+}
+
+
+/**
+ * Implements hook_block_info()
+ */ 
+function runkeeper_block_info() {
+  $blocks = array();
+  
+  $blocks['runkeeper_button'] = array(
+    'info' => t('Runkeepr Login'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  
+  $blocks['user_workout'] = array(
+    'info' => t('User workout Info'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  
+  $blocks['quick_reports'] = array(
+    'info' => t('Quick Reports'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  
+  $blocks['trainer_right_block'] = array(
+    'info' => t('Trainer Right Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $blocks['trainer_header_block'] = array(
+    'info' => t('Trainer Header Block'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  
+  return $blocks;
+}
+
+
+function sortDate( $a, $b ) {
+    return $a[0] - $b[0];
+}
+
+/**
+ * Implements hook_block_view()
+ */
+function runkeeper_block_view($delta = '') {
+  global $user;
+  $profile = user_load($user->uid);
+  //watchdog('profile_info','<pre>'.print_r($profile,true).'</pre>');
+  switch($delta) {
+    case 'runkeeper_button' :
+      $block['subject'] = t('Runkeeper Login');
+      $block['content'] = _runkeeper_login_button();
+      break;
+    case 'user_workout' :
+      if($profile){
+        $username = !empty($profile->field_first_name) ? ucfirst($profile->field_first_name[LANGUAGE_NONE][0]['value']) : $user->name;
+        $block['subject'] = t("Hello @user",array('@user' => $username));
+        $block['content'] = _runkeeper_user_workout(); 
+      }
+      break;
+    case 'quick_reports' :
+      $block['subject'] = t("Quick Reports");
+      $block['content'] = _runkeeper_quick_reports();
+      break;
+    case 'trainer_right_block':
+      $block['subject'] = t("Trainer Details");
+      $block['content'] = _runkeeper_trainer_right_block();
+      break;
+    case 'trainer_header_block':
+      $block['subject'] = t("Trainer Details");
+      $block['content'] = _runkeeper_trainer_header_block();
+      break;
+  }
+  return $block;
+}
+
+
+/**
+ * Trainer Right siderbar block callback 
+ */
+function _runkeeper_trainer_right_block(){
+  
+  $html = '<p>Your trainer: Parves</p>
+          <div class="wrap">
+              <div class="inner-grid-5">
+                  <img src="http://placehold.it/118x118" alt="">
+              </div>
+      
+              <div class="inner-grid-7">
+                  <a href="#" class="btn btn-main expanded">Reschedule a session</a>
+                  <a href="#" class="btn btn-main expanded">View Trainer Profile</a>
+                  <a href="#" class="btn btn-main expanded">Contact trainer</a>
+              </div>
+          </div>';
+  return $html;
+}
+
+/**
+ * Trainer Header block callback 
+ */
+function _runkeeper_trainer_header_block(){
+  
+  $html = '<ul>
+            <li>
+              <span class="staff-image"><img src="http://placehold.it/30x30"></span>
+              <span class="text">
+                  <span class="staff-title">Your trainer:</span>
+                  <span class="staff-name">Parves samir</span>
+              </span>
+            </li>
+            <li>
+              <span class="staff-image"><img src="http://placehold.it/30x30"></span>
+              <span class="text">
+                  <span class="staff-title">Your nutrionist:</span>
+                  <span class="staff-name">Sarah John Doe</span>
+              </span>
+            </li>  
+          </ul>';
+  return $html;
+}
+
+/**
+ * User workout block callback 
+ */
+function _runkeeper_user_workout(){
+  global $user;
+  $uid = $user->uid;
+  $pid = _runkeeper_user_plan_id($uid);
+  
+  $TotalWorkouts = _runkeeper_user_total_workout($pid);
+  $completedWorkouts = _runkeeper_user_total_finished_workout($pid);
+  $missed = $TotalWorkouts - $completedWorkouts;
+  
+  $nextWorkout = _runkeeper_user_get_workoutDate($pid,'>');
+  $lastWorkout = _runkeeper_user_get_workoutDate($pid,'<');
+  
+  if($nextWorkout){
+    $output = "You missed $missed of $TotalWorkouts workout this month \n
+                Your next workout is: $nextWorkout \n
+                Your last workout was: $lastWorkout \n "; //Goal completion: 55%  
+  }
+  else{
+    $output = "No workouts scheduled";
+  }
+  return $output;  
+}
+
+/**
+ * Get Next workout of current month 
+ */
+function _runkeeper_user_get_workoutDate($pid,$operator){
+  
+  $today_this_month = date('Y-m-d 00:00:00');
+  
+  $query = new EntityFieldQuery();
+
+  $query->entityCondition('entity_type', 'node')  
+    ->entityCondition('bundle', 'workout_entry')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_date', 'value', $today_this_month, $operator)
+    ->fieldCondition('field_plan', 'nid', $pid)
+    ->range(0, 1);
+  $result = $query->execute();
+  
+  $date = '';
+  $count = 0;
+  if (isset($result['node'])) {
+    $key = key($result['node']);
+    $node = node_load($key);
+    $output = field_view_field('node', $node, 'field_date',array(
+  'label'=>'hidden'));
+    $date = date('F d, Y',strtotime($output['#items'][0]['value']));
+  }
+  
+  return $date;
+}
+
+/**
+ * Get total workout of a month 
+ */
+function _runkeeper_user_total_workout($pid,$month = ''){
+  
+  $first_day_this_month = date('Y-m-01 00:00:00'); // hard-coded '01' for first day
+  $today_this_month = date('Y-m-t 00:00:00');
+  
+  $query = new EntityFieldQuery();
+
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'workout_entry')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_date', 'value',$today_this_month, '<')
+    ->fieldCondition('field_date', 'value',$first_day_this_month, '>')
+    ->fieldCondition('field_plan', 'nid', $pid);
+  $result = $query->execute();
+  
+  $count = 0;
+  if (isset($result['node'])) {
+    $count = count($result['node']);
+  }
+  
+  return $count;  
+}
+
+/**
+ * Get total Finished workout of a month 
+ */
+function _runkeeper_user_total_finished_workout($pid,$month = ''){
+  
+  $first_day_this_month = strtotime(date('Y-m-01 00:00:00')); // hard-coded '01' for first day
+  $today_this_month = strtotime(date('Y-m-d 00:00:00'));
+  
+  $measurements = db_select('user_measurements','um')
+          ->fields('um',array('id','uid'))
+          ->condition('um.pid',$pid)
+          ->condition('um.created',array($first_day_this_month,$today_this_month),'BETWEEN')
+          ->condition('um.type',array('initial','goal','final'),'NOT IN')
+          ->execute()
+          ->fetchAll();
+          
+  return count($measurements);        
+}
+
+
+/**
+ * Quick reports clalback
+ */
+function _runkeeper_quick_reports(){
+  //return 'hello';
+  global $user;
+  $linklist = array(
+    'weight_chart'      => array( 'title' => 'Weight chart', 'href' => 'user/'.$user->uid.'/weight-feed' ),
+    'measurement_chart' => array( 'title' => 'Measurement chart', 'href' => 'user/'.$user->uid.'/general-measurements' ),
+    'net_calorie_chart' => array( 'title' => 'Net calorie chart', 'href' => 'user/'.$user->uid.'/background-activities' ),
+    'overall_progress-chart' => array( 'title' => 'Overall progress chart', 'href' => 'user/'.$user->uid.'/fitness-activities' ),
+    'workout_calendar' => array( 'title' => 'Workout calendar', 'href' => 'user/'.$user->uid.'/background-activities' ),
+  );
+  return theme('links', array('links'=> $linklist));
+} 
+
+
+function runkeeper_get_accesstoken_by_uid($uid) {
+  $query = db_select('runkeeper_code', 'rc');
+  $query->fields('rc', array('access_token'));
+  $query->condition('rc.uid', $uid);
+  $result = $query->execute()->fetchField();
+  return $result;
+}           
+
+/**
+ * Runkeeper Login block callback 
+ */
+function _runkeeper_login_button() {
+  global $user;
+  
+  
+  if(arg(0) == 'user'){
+    $uid = arg(1);
+  }else{
+    $uid = $user->uid;  
+  }
+  
+  $result = db_select('runkeeper_code','rc')
+          ->fields('rc',array('access_token','uid'))
+          ->condition('uid',$uid)
+          ->isNotNull('access_token')
+          ->execute()
+          ->fetchObject();
+  
+  
+  if(!empty($result)){
+    return drupal_get_form('runkeeper_start_fetching_data_form',$uid);  
+  }
+  
+  $rkAPI  = runkeeper_client();
+  $url = l(t('Sync Runkeeper accounts'), $rkAPI->connectRunkeeperButtonUrl());
+  if (isset($_GET['code']) && !empty($_GET['code'])) {
+    $code = $_GET['code'];
+    db_merge('runkeeper_code')->key(array('uid' => $uid))->fields(array('uid' => $uid, 'code' => $_GET['code']))->execute();
+    $response = $rkAPI->getRunkeeperToken($code, url(current_path(), array('absolute' => TRUE)));
+  
+    if($response){
+      db_merge('runkeeper_code')->key(array('uid' => $uid))->fields(array('uid' => $uid, 'code' => $code, 'access_token' => $response->access_token))->execute();
+      drupal_set_message(t('You have been successfully authorized from runkeeper account'));
+      return drupal_get_form('runkeeper_start_fetching_data_form',$uid);
+    }else{
+      drupal_set_message(t("getRunkeeperToken: bad response"));
+      return (FALSE);
+    }
+     
+  }
+  return ($url);
+}
+
+
+
+
+/**
+ * Form builder function to allow choice of which batch to run.
+ */
+function runkeeper_start_fetching_data_form($form, &$form_state, $uid) {
+  
+  $form['#action'] = url('user/'.$uid);
+  
+  $form['uid'] = array(
+    '#type' => 'hidden',
+    '#value' => $uid,
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Fetch Runkeeper Data'),
+  );
+  
+  $form['unlink'] = array(
+    '#type' => 'submit',
+    '#value' => t('Unlink'),
+    '#submit' =>  array('unlink_user_runkeeper_account'),
+  );
+  
+  return $form;
+}
+
+function unlink_user_runkeeper_account ($form, &$form_state) {
+	$uid = $form_state['values']['uid'];
+	$deleted = db_delete('runkeeper_code')
+								->condition('uid', $uid)
+								->execute();
+  if($deleted){
+		drupal_set_message(t('You are succesfully unlinked from Runkeeper'));
+	}else{
+		drupal_set_message(t('There is some error, please try again later'),'error');
+	}
+}
+
+function runkeeper_start_fetching_data_form_submit($form, &$form_state) {
+  $uid = $form_state['values']['uid'];
+  $batch = runkeeper_get_user_activity_data_batch($uid);
+  batch_set($batch);
+}
+
+
+function runkeeper_get_user_activity_data_batch($uid){
+  global $user;
+  $tasks = array('fitness','strength','nutrition','weight');
+  
+  if(arg(0) == 'user'){
+    $uid = arg(1);
+  }else{
+    $uid = $user->uid;  
+  }
+  
+  $num_operations = count($tasks);
+  $operations = array();
+  for ($i = 0; $i<$num_operations; $i++) {
+    $operations[] = array('runkeeper_get_user_activity_data', array((array)$uid, $tasks[$i]));
+  }
+ 
+  
+  $batch = array(
+    'title' => t('Fetching Data from Runkeeper'),
+    'operations' => $operations,
+    'finished' => 'runkeeper_batch_finished',
+  );
+  return $batch;
+  
+}
+
+
+/**
+ * Batch 'finished' callback used by both batch 1 and batch 2.
+ */
+function runkeeper_batch_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we could do something meaningful with the results.
+    // We just display the number of nodes we processed...
+    foreach($results as $key => $value)
+      drupal_set_message(t('Fetched @count results for @key', array('@count' => count($results[$key]),'@key' => ucfirst($key))));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing @operation with arguments : @args', array('@operation' => $error_operation[0], '@args' => print_r($error_operation[0], TRUE))));
+  }
+}
+
+
+/**
+ * Insert/Update All runkeeper activity data.
+ */
+function runkeeper_get_user_activity_data($uids = array(), $process = '', &$context){
+  global $user;
+  
+  if(!empty($uids)){
+    foreach($uids as $uid){
+      $codeResult[] = (object)array('uid' => $uid);
+    }
+  }else{
+    $codeResult = db_select('runkeeper_code','rc')
+            ->fields('rc',array('uid'))
+            ->execute()
+            ->fetchAll();  
+  }
+  
+  
+  foreach($codeResult as $codeRecord){
+    $uid = $codeRecord->uid;
+    $pid = _runkeeper_user_plan_id($uid);
+    if($pid){
+      
+      switch($process){
+        case 'fitness':
+					//Insert Fitness activity data.
+					$resultFitness = insertFitnessActivityData($uid,$pid);
+					$context['results']['fitness'] = $resultFitness;
+        break;
+        case 'strength':
+					// Insert strength activity data.
+					$resultStrength = insertStrengthTrainingData($uid,$pid);
+					$context['results']['strength'] = $resultStrength;
+        break;
+        case 'nutrition':
+					// Insert Nutrition data.
+					$resultNutrition = insertNutitionData($uid,$pid);
+					$context['results']['nutrition'] = $resultNutrition;
+        break;
+        case 'weight':
+					// Insert Weight data.
+					$resultWeight = insetWeightData($uid,$pid);
+					$context['results']['weight'] = $resultWeight;
+        break;
+        default:
+          $resultFitness = insertFitnessActivityData($uid,$pid);
+          $resultStrength = insertStrengthTrainingData($uid,$pid);
+          $resultNutrition = insertNutitionData($uid,$pid);
+          $resultWeight = insetWeightData($uid,$pid);
+          
+					$context['results']['fitness'] = $resultFitness;
+					$context['results']['strength'] = $resultStrength;
+					$context['results']['nutrition'] = $resultNutrition;
+					$context['results']['weight'] = $resultWeight;
+          
+          
+        break;
+      }
+      
+      
+      // Optional message displayed under the progressbar.
+      $context['message'] = t('Loading Data of "@title"', array('@title' => ucfirst($process)));
+    }
+ }
+ //return '';
+}
+
+
+function insetWeightData($uid,$pid){
+  $WeightFeeds = runkeeper_client_request('WeightFeed', 'Read',null, null, null, $uid);
+  watchdog('weightfeeds','<pre>'.print_r($WeightFeeds,true));
+ 
+  $WeightItems = array();
+  $result = array();
+    foreach($WeightFeeds['items'] as $WeightItem){
+      $arr = array();
+      $wid = filter_var($WeightItem['uri'], FILTER_SANITIZE_NUMBER_INT);
+        $arr = array(
+          'uid' => $uid,
+          'pid' => $pid,
+          'wid' => $wid,
+          'type' => 'runkeeper',
+          'created' => check_plain(strtotime($WeightItem['timestamp'])),
+          'weight' => !empty($WeightItem['weight']) ? check_plain($WeightItem['weight']) : 0,
+          'uri' => check_plain($WeightItem['uri']),
+          'blood_fat_percentage' => !empty($WeightItem['fat_percent']) ? check_plain($WeightItem['fat_percent']) : 0,
+          'bmi' => !empty($WeightItem['bmi']) ? check_plain($WeightItem['bmi']) : 0,
+         );
+          
+        $result[] = db_merge('user_measurements')
+              ->key(array('pid' => $pid,'wid' => $wid))
+              ->fields($arr)
+              ->execute();
+    }
+  return $result;
+}
+
+function insertNutitionData($uid,$pid){
+  $nutritionFeeds = runkeeper_client_request('NutritionSetFeed', 'Read', null, null, null, $uid);
+  watchdog('nutritionFeeds','<pre>'.print_r($nutritionFeeds,true));
+  
+  $result = array();
+    foreach($nutritionFeeds['items'] as $nutritionItem){
+      $arr = array();
+      $nutritionItem = runkeeper_client_request('NutritionSet', 'Read',null, $nutritionItem['uri'], null, $uid);
+      $nid = filter_var($nutritionItem['uri'], FILTER_SANITIZE_NUMBER_INT);
+      watchdog('nutirition_id',$uid.'--pid--'.$pid.'--uri---'.$nutritionItem['uri']);
+      
+      $arr = array(
+        'uid' => $uid,
+        'pid' => $pid,
+        'nid' => $nid,
+        'source' => check_plain($nutritionItem['source']),
+        'uri' => check_plain($nutritionItem['uri']),
+      );
+      
+      if(isset($nutritionItem['timestamp'])) $arr['created'] = check_plain(strtotime($nutritionItem['timestamp']));
+      if(isset($nutritionItem['calories'])) $arr['total_calories'] = check_plain($nutritionItem['calories']);
+      if(isset($nutritionItem['sodium'])) $arr['sodium'] = check_plain($nutritionItem['sodium']);
+      if(isset($nutritionItem['water'])) $arr['water'] = check_plain($nutritionItem['water']);
+      if(isset($nutritionItem['meal'])) $arr['meal'] = check_plain($nutritionItem['meal']);
+      if(isset($nutritionItem['fat'])) $arr['fat'] = check_plain($nutritionItem['fat']);
+      if(isset($nutritionItem['fiber'])) $arr['fiber'] = check_plain($nutritionItem['fiber']);
+      if(isset($nutritionItem['protein'])) $arr['protein'] = check_plain($nutritionItem['protein']);
+       
+        if($nid){
+        $result[] = db_merge('user_nutrition')
+              ->key(array('pid' => $pid,'nid' => $nid))
+              ->fields($arr)
+              ->execute();  
+      } 
+    }
+  return $result;
+}
+
+function insertStrengthTrainingData($uid,$pid){
+  
+  $strengthFeeds = runkeeper_client_request('StrengthTrainingActivityFeed', 'Read',null, null, null, $uid);
+  watchdog('strengthFeeds','<pre>'.print_r($strengthFeeds,true));
+  
+  $result = array();
+  foreach($strengthFeeds['items'] as $strengthItem){
+      $arr = array();
+      $strengthItem = runkeeper_client_request('StrengthTrainingActivity', 'Read',null, $strengthItem['uri'], null, $uid);
+      $eid = array();
+      // insert exercise from strength activity data
+      $sid = filter_var($strengthItem['uri'], FILTER_SANITIZE_NUMBER_INT);
+      if(is_array($strengthItem['exercises'])){
+				watchdog('exerciseFeeds','<pre>'.print_r($strengthItem['exercises'],true));
+        foreach($strengthItem['exercises'] as $exercise_array){
+          $exercises = array(
+          'sid' => $sid,
+          'primary_type' => check_plain($exercise_array['primary_type']),
+          'routine' => check_plain($exercise_array['routine']),
+          'primary_muscle_group' => check_plain($exercise_array['primary_muscle_group']),
+          'secondary_type' => check_plain($exercise_array['secondary_type']),
+          'sets' => serialize($exercise_array['sets']));
+          
+          if(isset($exercise_array['secondary_muscle_group']))
+            $exercises['secondary_muscle_group'] = check_plain($exercise_array['secondary_muscle_group']);
+            
+          db_merge('user_exercise')
+                  ->key(array('sid' => $exercises['sid'],'secondary_type' => $exercises['secondary_type']))
+                  ->fields($exercises)
+                  ->execute(); 
+        } 
+      }
+      // Insert strength activity data with last inserted exercise id 
+      $arr = array(
+        'uid' => $uid,
+        'pid' => $pid,
+        'sid' => $sid,
+        'created' => check_plain(strtotime($strengthItem['start_time'])),
+        'source' => check_plain($strengthItem['source']),
+        'uri' => check_plain($strengthItem['uri']),
+      );
+      
+      if(isset($strengthItem['total_calories'])) $arr['total_calories'] = check_plain($strengthItem['total_calories']); 
+       
+        $result[] = db_merge('user_strength_activity')
+            ->key(array('pid' => $pid,'sid' => $arr['sid']))
+            ->fields($arr)
+            ->execute();
+    }
+  return $result;
+}
+
+
+function insertFitnessActivityData($uid,$pid){
+  
+  $activityFeeds = runkeeper_client_request('FitnessActivityFeed', 'Read',null, null, null, $uid);
+  watchdog('activityFeeds','<pre>'.print_r($activityFeeds,true));
+  $aid = array();
+  foreach($activityFeeds['items'] as $activityItem){
+    $arr = array();
+    $activityItem = runkeeper_client_request('FitnessActivity', 'Read',null, $activityItem['uri'], null, $uid);
+    $fid = filter_var($activityItem['uri'], FILTER_SANITIZE_NUMBER_INT);
+    $arr = array(
+      'uid' => $uid,
+      'pid' => $pid,
+      'fid' => $fid,
+      'created' => check_plain(strtotime($activityItem['start_time'])),
+      'source' => check_plain($activityItem['source']),
+      'uri' => check_plain($activityItem['uri']),
+      'total_distance' => check_plain($activityItem['total_distance']),
+      'duration' => check_plain($activityItem['duration']),
+      'type' => check_plain($activityItem['type']),
+      'entry_mode' => check_plain($activityItem['entry_mode']),
+      'distance' => serialize($activityItem['distance']),
+      'heart_rate' => serialize($activityItem['heart_rate']),
+      'total_calories' => check_plain($activityItem['total_calories']),
+      'calories' => serialize($activityItem['calories']),);
+      
+    $aid[] = db_merge('user_fitness_activity')
+          ->key(array('pid' => $pid,'uri' => $arr['uri']))
+          ->fields($arr)
+          ->execute();
+  }
+  return $result;
+}
+
+function runkeeper_user_profile_name($uid){
+  
+  $query = new EntityFieldQueryExtraFields();
+  $query->entityCondition('entity_type', 'user')
+    ->entityCondition('bundle', 'user')
+    ->propertyCondition('status', 1)
+    ->propertyCondition('uid', $uid)
+    ->addExtraField('field_first_name','value','first_name')
+    ->addExtraField('field_last_name','value','last_name')
+    ->range(0, 1);
+  $result = $query->execute();
+  
+  if(!empty($result['user'])){
+    $uid = key($result['user']);
+    $firstname = $result['user'][$uid]->extraFields->field_first_name_first_name;
+    $lastname = $result['user'][$uid]->extraFields->field_last_name_last_name;
+  }else{
+    $user = user_load($uid);
+    return $user->name;
+  }
+  
+  
+  return trim("$firstname $lastname");
+  
+}
+
+
+function _runkeeper_user_plan_id($user = ''){
+  
+  if($user){
+    $uid = $user;
+  }else{
+    global $user;
+    $uid = $user->uid;
+  }
+  
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'plan')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_user', 'uid', $uid)
+    ->range(0, 1);
+  $result = $query->execute();
+  
+  if (isset($result['node'])) {
+    $nid = key($result['node']);
+  }  
+  return @$nid;
+}
+
+
+
+function runkeeper_plan_user($pid){
+  
+  $query = new EntityFieldQueryExtraFields();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'plan')
+    ->propertyCondition('status', 1)
+    ->propertyCondition('nid', $pid)    
+    ->addExtraField('field_user','uid','field_user')
+    ->range(0, 1);
+  $result = $query->execute();
+  
+  
+  if (isset($result['node'])) {
+    $nid = key($result['node']);
+    return $result['node'][$nid]->extraFields->field_user_field_user;
+  }  
+  return false;
+}
+
+function get_strength_activity_title($sid){
+  $record = db_select('user_exercise','sa')
+            ->fields('sa',array('routine','sid'))
+            ->condition('sa.sid',$sid)
+            ->execute()
+            ->fetchObject();
+  return $record->routine;
+}
+
+function limit_words($string, $word_limit){
+  $words = explode(" ",$string);
+  $text = implode(" ",array_splice($words,0,$word_limit));
+  if($text == $string){
+    return $text;
+  }else{
+    return $text.'...';  
+  }
+}
+
+
+/**
+ *  Get weight Loss data from user_measurements table.
+ */ 
+function getWeightLossData($date, $goal_type, $pid){
+  
+  $timestamp = $date;
+  if((int)$date == $date){
+     $date = date('d-m-Y',$date);
+  }
+  
+  $arr = array();
+  
+  if($goal_type == 'weight_loss') {
+        
+      $weightData =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created', 'chest', 'waist'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') = :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.weight',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+      
+      if (!empty($weightData)){
+          $arr['weight_loss'] = (int)$weightData->weight;
+          $arr['chest_waist'] = ($weightData->waist > 0) ? ($weightData->chest / $weightData->waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;
+          $arr['accurate'] = 0;
+      }else{
+        $weightBeforeDate =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created' ,'chest', 'waist'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') < :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.weight',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+        
+        $weightAfterDate =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created','chest', 'waist'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') > :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.weight',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+        
+        if(!empty($weightBeforeDate) && !empty($weightAfterDate)){
+          $chest = ($weightBeforeDate->chest + $weightAfterDate->chest) /2;
+          $waist = ($weightBeforeDate->waist + $weightAfterDate->waist) /2;
+          $arr['weight_loss'] = (int)($weightBeforeDate->weight + $weightAfterDate->weight) / 2;
+          $arr['chest_waist'] = ($waist > 0) ? (float) ($chest / $waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;
+          $arr['accurate'] = 0;
+        }else if(!empty($weightBeforeDate) && empty($weightAfterDate)){
+          $arr['weight_loss'] = (int)$weightBeforeDate->weight;
+          $arr['chest_waist'] = ($weightBeforeDate->waist > 0) ? (float)($weightBeforeDate->chest / $weightBeforeDate->waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;  
+          $arr['accurate'] = 0;
+        }
+     }
+    
+    //return (object) $arr;
+  } 
+  else if($goal_type == 'bfp'){
+    
+   $weightData =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created', 'chest', 'waist','blood_fat_percentage'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') = :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.blood_fat_percentage',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+      
+      if (!empty($weightData)){
+          $arr['weight_loss'] = (int)$weightData->weight;
+          $arr['bfp'] = (int)$weightData->blood_fat_percentage;
+          $arr['chest_waist'] = ($weightData->waist > 0) ? ($weightData->chest / $weightData->waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;
+          $arr['accurate'] = 0;
+      }else{
+        $weightBeforeDate =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created' ,'chest', 'waist', 'blood_fat_percentage'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') < :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.blood_fat_percentage',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+        
+        $weightAfterDate =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created','chest', 'waist', 'blood_fat_percentage'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') > :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.blood_fat_percentage',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+        
+        if(!empty($weightBeforeDate) && !empty($weightAfterDate)){
+          $chest = ($weightBeforeDate->chest + $weightAfterDate->chest) /2;
+          $waist = ($weightBeforeDate->waist + $weightAfterDate->waist) /2;
+          $arr['weight_loss'] = (float)($weightBeforeDate->weight + $weightAfterDate->weight) / 2;
+          $arr['bfp'] = (float)($weightBeforeDate->blood_fat_percentage + $weightAfterDate->blood_fat_percentage) / 2;
+          $arr['chest_waist'] = ($waist > 0) ? (float) ($chest / $waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;
+          $arr['accurate'] = 0;
+        }else if(!empty($weightBeforeDate) && empty($weightAfterDate)){
+          $arr['weight_loss'] = (float)$weightBeforeDate->weight;
+          $arr['bfp'] = (float)$weightBeforeDate->blood_fat_percentage;
+          $arr['chest_waist'] = ($weightBeforeDate->waist > 0) ? (float)($weightBeforeDate->chest / $weightBeforeDate->waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;  
+          $arr['accurate'] = 0;
+        }
+     }
+    
+    //return (object) $arr; 
+    }
+    else if($goal_type == 'chest_waist'){
+    
+      $weightData =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created', 'chest', 'waist'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') = :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.waist',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+      
+      if (!empty($weightData)){
+          $arr['weight_loss'] = (int)$weightData->weight;
+          $arr['chest_waist'] = ($weightData->waist > 0) ? ($weightData->chest / $weightData->waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;
+          $arr['accurate'] = 0;
+      }else{
+        $weightBeforeDate =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created' ,'chest', 'waist', 'blood_fat_percentage'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') < :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.waist',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+        
+        $weightAfterDate =  db_select('user_measurements','um')
+                  ->fields('um', array('weight', 'created','chest', 'waist', 'blood_fat_percentage'))
+                  ->where("FROM_UNIXTIME(um.`created`,'%d-%m-%Y') > :date", array(':date' => $date))
+                  //->condition("date_format(`um.created`,'%d-%m-%Y')",$date)
+                  ->condition('um.waist',0,'>')
+                  ->condition('um.pid',$pid)
+                  ->execute()
+                  ->fetchObject();
+        
+        if(!empty($weightBeforeDate) && !empty($weightAfterDate)){
+          $chest = ($weightBeforeDate->chest + $weightAfterDate->chest) /2;
+          $waist = ($weightBeforeDate->waist + $weightAfterDate->waist) /2;
+          $arr['weight_loss'] = (float)($weightBeforeDate->weight + $weightAfterDate->weight) / 2;
+          $arr['chest_waist'] = ($waist > 0) ? (float) ($chest / $waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;
+          $arr['accurate'] = 0;
+        }else if(!empty($weightBeforeDate) && empty($weightAfterDate)){
+          $arr['weight_loss'] = (float)$weightBeforeDate->weight;
+          $arr['chest_waist'] = ($weightBeforeDate->waist > 0) ? (float)($weightBeforeDate->chest / $weightBeforeDate->waist) : null;
+          $arr['created'] = $timestamp;
+          $arr['goal'] = null;  
+          $arr['accurate'] = 0;
+        }
+     } 
+    }
+  return (object) $arr;
+}
+
+
+function getGoalData($date, $plan, $goal_type){
+  
+  $startDate = strtotime($plan['start_date']);
+  $endDate   = strtotime($plan['end_date']);
+  
+  $fieldDate = new DateObject($endDate);
+  $nowDate = new DateObject($startDate);
+  $plan_length = $fieldDate->difference($nowDate, 'days');
+  
+  $currDate = new DateObject($date);
+  $diff_between_date_and_start = (int)$fieldDate->difference($currDate, 'days');
+  
+  if ($diff_between_date_and_start < 0){
+    return 0;
+  }
+  
+  if($goal_type == 'weight_loss'){
+    $initGoal = (float)$plan['inital_weight'];
+    $lastGoal = (float)$plan['last_weight'];  
+  }else if($goal_type == 'bfp'){
+    $initGoal = (float)$plan['inital_bfp'];
+    $lastGoal = (float)$plan['last_bfp'];
+  }
+  
+  $every_day_goal_increment = abs($lastGoal - $initGoal) / $plan_length;
+  
+  if($initGoal < $lastGoal){
+    $ret = $initGoal + ($every_day_goal_increment * $diff_between_date_and_start);  
+  }else{
+    $ret = $initGoal - ($every_day_goal_increment * $diff_between_date_and_start);
+  }
+  
+  //watchdog('returing_Val','Init--'.$initGoal.'--return--'.$ret.'--date--'.date('d-m-y',$date).'--last--'.$lastGoal);
+  
+  return $ret; 
+}
